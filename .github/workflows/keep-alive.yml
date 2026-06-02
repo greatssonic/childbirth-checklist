@@ -1,0 +1,23 @@
+name: Keep Supabase Awake
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # 매일 UTC 9시 (한국 시간 18시)
+  workflow_dispatch:  # 수동 실행 버튼
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/rooms?select=code&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}")
+          echo "Response status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Ping failed with status $STATUS"
+            exit 1
+          fi
+          echo "✅ Supabase ping successful"
