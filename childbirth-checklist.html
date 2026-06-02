@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>출산 준비 체크리스트 · 노진명 & 와이프</title>
+<title>🍼 프동이 맞이하기 Check list</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Jua&family=Single+Day&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f7f5f2;
@@ -25,12 +28,17 @@
   }
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-family: 'Gaegu', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
     margin: 0;
     padding: 0;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.6;
+    line-height: 1.7;
+    font-size: 1.05rem;
+  }
+  h1, h2, h3, .section-header, header h1 {
+    font-family: 'Jua', 'Gaegu', sans-serif !important;
+    letter-spacing: 0.5px;
   }
   header {
     background: linear-gradient(135deg, #d97757 0%, #e89e7c 100%);
@@ -480,19 +488,100 @@
     cursor: pointer;
     font-family: inherit;
   }
+  /* 🍼 Falling baby items animation */
+  .baby-items {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .baby-item {
+    position: absolute;
+    top: -50px;
+    user-select: none;
+    opacity: 0.65;
+    animation: babyFall linear infinite;
+    will-change: transform;
+  }
+  @keyframes babyFall {
+    0% {
+      transform: translateY(-10vh) rotate(0deg) translateX(0);
+    }
+    50% {
+      transform: translateY(50vh) rotate(180deg) translateX(20px);
+    }
+    100% {
+      transform: translateY(110vh) rotate(360deg) translateX(-20px);
+    }
+  }
+  /* Bring main content above falling items (preserve existing position) */
+  .container { position: relative; z-index: 10; }
+  header { z-index: 100; }  /* header already sticky from earlier rule */
+  .overlay { z-index: 1000; }  /* keep overlays on top */
+
+  /* 🎀 Two-column wife/husband split */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .col-wife, .col-husband {
+    min-width: 0;
+  }
+  .col-wife { border-right: 1px dashed var(--border); }
+  .col-header {
+    padding: 0.6rem 0.8rem;
+    font-family: 'Jua', sans-serif;
+    font-size: 0.95rem;
+    text-align: center;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 5;
+  }
+  .col-header.wife { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #be185d; }
+  .col-header.husband { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; }
+  .joint-row {
+    border-top: 2px dashed var(--border);
+    background: #fefce8;
+  }
+  .joint-row .col-header {
+    background: linear-gradient(135deg, #fef9c3, #fef08a);
+    color: #854d0e;
+    border-bottom: 1px solid var(--border);
+  }
+  /* Mobile: stack columns */
+  @media (max-width: 720px) {
+    .two-col { grid-template-columns: 1fr; }
+    .col-wife { border-right: none; border-bottom: 2px dashed var(--border); }
+    .col-header { position: relative; }
+  }
+
+  /* Cute touches for items */
+  .item-check { border-radius: 8px; }
+  .badge { font-family: 'Gaegu', sans-serif; font-weight: 700; font-size: 0.8rem !important; }
+  .who-tag { display: none; }  /* redundant with column header */
+
   @media print {
     header { position: static; background: none; color: black; }
-    .toolbar, footer, .item-expand, .sync-bar { display: none; }
+    .toolbar, footer, .item-expand, .sync-bar, .baby-items { display: none; }
     .item-detail { display: block !important; }
     .section.collapsed .section-body { display: block; }
+    .two-col { display: block; }
   }
 </style>
 </head>
 <body>
 
+<div class="baby-items" id="babyItems"></div>
+
 <header>
-  <h1>👶 출산 준비 체크리스트</h1>
-  <p class="subtitle">노진명 & 와이프 · 2026년 11월 출산 예정</p>
+  <h1>🍼 프동이 맞이하기 Check list 🧸</h1>
+  <p class="subtitle">노진명 & 와이프 · 2026년 11월, 프동이 만나는 날 💕</p>
   <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
   <p class="progress-text" id="progressText">0 / 0 완료</p>
   <div class="sync-bar">
@@ -1869,28 +1958,53 @@ function render() {
     let sDone = 0, sTotal = section.items.length;
     totalCount += sTotal;
     section.items.forEach(item => { if (state[item.id]) { sDone++; doneCount++; } });
+    // Split items by who
+    const wifeItems = section.items.filter(i => i.who === '와이프');
+    const husbandItems = section.items.filter(i => i.who === '남편');
+    const jointItems = section.items.filter(i => i.who === '공동' || i.who === '병원' || !i.who);
+
+    const renderItem = (item) => `
+      <div class="item ${state[item.id] ? 'done' : ''} ${state['__open_' + item.id] ? 'open' : ''}" data-id="${item.id}">
+        <div class="item-header" onclick="toggleItem('${item.id}', event)">
+          <div class="item-check" onclick="event.stopPropagation(); toggleCheck('${item.id}')"></div>
+          <div class="item-title-area">
+            <p class="item-title">${item.title}</p>
+            <div class="item-meta">
+              ${item.cats.map(c => `<span class="badge badge-${c}">${catLabel(c)}</span>`).join('')}
+              ${item.deadline ? `<span class="badge badge-deadline">⏰ ${item.deadline}</span>` : ''}
+              ${item.who === '병원' ? `<span class="badge" style="background:#fce7f3;color:#be185d">🏥 병원자동</span>` : ''}
+            </div>
+          </div>
+          <span class="item-expand">▶</span>
+        </div>
+        <div class="item-detail">${item.detail}</div>
+      </div>
+    `;
+
     sectionEl.innerHTML = `
       <div class="section-header" onclick="toggleSection(${sIdx})">
         <span>${section.title}</span>
         <span class="section-progress">${sDone}/${sTotal}</span>
       </div>
       <div class="section-body">
-        ${section.items.map(item => `
-          <div class="item ${state[item.id] ? 'done' : ''} ${state['__open_' + item.id] ? 'open' : ''}" data-id="${item.id}">
-            <div class="item-header" onclick="toggleItem('${item.id}', event)">
-              <div class="item-check" onclick="event.stopPropagation(); toggleCheck('${item.id}')"></div>
-              <div class="item-title-area">
-                <p class="item-title">${item.title} ${item.who ? `<span class="who-tag">${item.who}</span>` : ''}</p>
-                <div class="item-meta">
-                  ${item.cats.map(c => `<span class="badge badge-${c}">${catLabel(c)}</span>`).join('')}
-                  ${item.deadline ? `<span class="badge badge-deadline">⏰ ${item.deadline}</span>` : ''}
-                </div>
-              </div>
-              <span class="item-expand">▶</span>
+        ${(wifeItems.length > 0 || husbandItems.length > 0) ? `
+          <div class="two-col">
+            <div class="col-wife">
+              <div class="col-header wife">💗 아내가 할 일 (${wifeItems.length})</div>
+              ${wifeItems.length > 0 ? wifeItems.map(renderItem).join('') : '<div style="padding:1rem;text-align:center;color:var(--muted);font-size:0.85rem">없음</div>'}
             </div>
-            <div class="item-detail">${item.detail}</div>
+            <div class="col-husband">
+              <div class="col-header husband">💙 남편이 할 일 (${husbandItems.length})</div>
+              ${husbandItems.length > 0 ? husbandItems.map(renderItem).join('') : '<div style="padding:1rem;text-align:center;color:var(--muted);font-size:0.85rem">없음</div>'}
+            </div>
           </div>
-        `).join('')}
+        ` : ''}
+        ${jointItems.length > 0 ? `
+          <div class="joint-row">
+            <div class="col-header">💑 함께 (${jointItems.length})</div>
+            ${jointItems.map(renderItem).join('')}
+          </div>
+        ` : ''}
       </div>
     `;
     root.appendChild(sectionEl);
@@ -1997,9 +2111,29 @@ function applyImport() {
   }
 }
 
+// ===== 🍼 Falling baby items =====
+function createBabyItems() {
+  const wrap = document.getElementById('babyItems');
+  if (!wrap) return;
+  const items = ['🍼', '👶', '🧸', '🦄', '⭐', '🌙', '💕', '🎈', '🐻', '🐰', '🐣', '☁️', '🌟', '🎀', '🍪', '🍭', '🥛', '🩷', '💙', '💛'];
+  const count = window.innerWidth < 720 ? 14 : 22;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'baby-item';
+    el.textContent = items[Math.floor(Math.random() * items.length)];
+    el.style.left = Math.random() * 100 + '%';
+    el.style.fontSize = (18 + Math.random() * 24) + 'px';
+    el.style.animationDuration = (12 + Math.random() * 18) + 's';
+    el.style.animationDelay = (Math.random() * -20) + 's';
+    el.style.opacity = (0.35 + Math.random() * 0.4).toFixed(2);
+    wrap.appendChild(el);
+  }
+}
+
 // ===== Initial load =====
 loadConfig();
 render();
+createBabyItems();
 if (config?.url && config?.key && config?.room) {
   startSync();
 } else {
