@@ -325,9 +325,164 @@
     color: white;
     border-color: var(--accent);
   }
+  /* Sync UI */
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    opacity: 0.95;
+  }
+  .sync-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .sync-dot.on {
+    background: #4ade80;
+    animation: blink 2s infinite;
+  }
+  .sync-dot.off { background: #f87171; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .overlay {
+    display: none;
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+  .overlay.show { display: block; }
+  .setup-box {
+    max-width: 420px;
+    margin: 60px auto;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .setup-box h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem;
+    text-align: center;
+  }
+  .setup-box p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .setup-box label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+    display: block;
+    margin: 0.6rem 0 0.3rem;
+  }
+  .setup-box input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 0.5rem;
+  }
+  .setup-box input:focus { border-color: var(--accent); }
+  .setup-box .btn-primary {
+    background: linear-gradient(135deg, #d97757, #e89e7c);
+    color: white;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    font-family: inherit;
+  }
+  .setup-box .btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    width: 100%;
+    padding: 0.6rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    font-family: inherit;
+  }
+  .setup-box .btn-danger {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+  .setup-box .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0;
+  }
+  .setup-box .error-msg {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    display: none;
+  }
+  .step-num {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 0.7rem;
+    line-height: 18px;
+    margin-right: 4px;
+  }
+  .room-code-display {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-align: center;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 1rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+    font-family: monospace;
+  }
+  .room-code-display.small {
+    font-size: 1rem;
+    letter-spacing: 2px;
+    padding: 0.6rem;
+  }
+  .copy-btn {
+    width: 100%;
+    background: #6366f1;
+    color: white;
+    padding: 0.6rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
   @media print {
     header { position: static; background: none; color: black; }
-    .toolbar, footer, .item-expand { display: none; }
+    .toolbar, footer, .item-expand, .sync-bar { display: none; }
     .item-detail { display: block !important; }
     .section.collapsed .section-body { display: block; }
   }
@@ -340,7 +495,14 @@
   <p class="subtitle">노진명 & 와이프 · 2026년 11월 출산 예정</p>
   <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
   <p class="progress-text" id="progressText">0 / 0 완료</p>
+  <div class="sync-bar">
+    <div id="syncStatus"><span class="sync-dot off"></span>오프라인 모드</div>
+    <div id="roomInfo"></div>
+  </div>
 </header>
+
+<div id="setupOverlay" class="overlay"></div>
+<div id="roomOverlay" class="overlay"></div>
 
 <div class="container">
 
@@ -350,7 +512,8 @@
   <button onclick="showExport()">📤 진행상황 공유</button>
   <button onclick="showImport()">📥 가져오기</button>
   <button onclick="resetAll()">↻ 초기화</button>
-  <button class="primary" onclick="window.print()">🖨️ 인쇄</button>
+  <button onclick="window.print()">🖨️ 인쇄</button>
+  <button class="primary" onclick="showSetup()">⚙️ 실시간 동기화</button>
 </div>
 
 <div id="checklist"></div>
@@ -1441,11 +1604,257 @@ const CHECKLIST_DATA = [
 ];
 
 // ===== State management =====
+const STATE_KEY = 'childbirth-checklist-state';
+const CONFIG_KEY = 'childbirth-sync-config';
+let config = null;
+let syncInterval = null;
+let lastSyncedJson = '';
+
 function loadState() {
-  try { return JSON.parse(localStorage.getItem('childbirth-checklist-state') || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); } catch { return {}; }
 }
 function saveState(state) {
-  localStorage.setItem('childbirth-checklist-state', JSON.stringify(state));
+  localStorage.setItem(STATE_KEY, JSON.stringify(state));
+}
+function loadConfig() {
+  try { const s = localStorage.getItem(CONFIG_KEY); if (s) config = JSON.parse(s); } catch {}
+}
+function saveConfig() {
+  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch {}
+}
+
+// ===== Supabase cloud sync =====
+async function cloudFetch() {
+  if (!config?.url || !config?.key || !config?.room) return null;
+  try {
+    const r = await fetch(`${config.url}/rest/v1/rooms?code=eq.${config.room}&select=data`, {
+      headers: { 'apikey': config.key, 'Authorization': `Bearer ${config.key}` }
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d[0]?.data || null;
+  } catch (e) { return null; }
+}
+
+async function cloudPush(data) {
+  if (!config?.url || !config?.key || !config?.room) return false;
+  try {
+    const r = await fetch(`${config.url}/rest/v1/rooms?code=eq.${config.room}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': config.key,
+        'Authorization': `Bearer ${config.key}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ data, updated_at: new Date().toISOString() })
+    });
+    return r.ok;
+  } catch (e) { return false; }
+}
+
+async function cloudCreateRoom(code) {
+  if (!config?.url || !config?.key) return false;
+  try {
+    const state = loadState();
+    const r = await fetch(`${config.url}/rest/v1/rooms`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': config.key,
+        'Authorization': `Bearer ${config.key}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ code, data: state })
+    });
+    return r.ok;
+  } catch (e) { return false; }
+}
+
+async function syncFromCloud() {
+  const cloud = await cloudFetch();
+  if (cloud !== null) {
+    const cloudJson = JSON.stringify(cloud);
+    if (cloudJson !== lastSyncedJson) {
+      // Cloud has newer data — merge in
+      const localState = loadState();
+      // Preserve local UI state (collapsed sections, open items) by keeping __ keys from local
+      const merged = { ...cloud };
+      Object.keys(localState).forEach(k => {
+        if (k.startsWith('__')) merged[k] = localState[k];
+      });
+      saveState(merged);
+      lastSyncedJson = cloudJson;
+      render();
+    }
+    updateSyncUI(true);
+  } else {
+    updateSyncUI(false);
+  }
+}
+
+async function syncToCloud() {
+  const state = loadState();
+  // Exclude UI state (__ prefixed) from cloud sync
+  const cloudState = {};
+  Object.keys(state).forEach(k => {
+    if (!k.startsWith('__')) cloudState[k] = state[k];
+  });
+  const ok = await cloudPush(cloudState);
+  if (ok) lastSyncedJson = JSON.stringify(cloudState);
+  updateSyncUI(ok);
+}
+
+function startSync() {
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(syncFromCloud, 3000);
+  syncFromCloud();
+}
+
+function stopSync() {
+  if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+  updateSyncUI(false);
+}
+
+function updateSyncUI(connected) {
+  const status = document.getElementById('syncStatus');
+  const roomInfo = document.getElementById('roomInfo');
+  if (!status) return;
+  if (connected && config?.room) {
+    status.innerHTML = `<span class="sync-dot on"></span>실시간 동기화 중`;
+    roomInfo.textContent = `방: ${config.room}`;
+  } else if (config?.room) {
+    status.innerHTML = `<span class="sync-dot off"></span>연결 끊김 (재시도 중)`;
+    roomInfo.textContent = `방: ${config.room}`;
+  } else {
+    status.innerHTML = `<span class="sync-dot off"></span>오프라인 모드`;
+    roomInfo.textContent = '';
+  }
+}
+
+// ===== Setup UI =====
+function showSetup() {
+  const o = document.getElementById('setupOverlay');
+  o.classList.add('show');
+  o.innerHTML = `
+    <div class="setup-box">
+      <h2>⚙️ 실시간 동기화 설정</h2>
+      <p>부부가 각자 폰에서 같은 체크리스트를<br>실시간으로 공유할 수 있어요 💑</p>
+      <div id="setupError" class="error-msg"></div>
+      <label><span class="step-num">1</span> Supabase URL</label>
+      <input id="sbUrl" placeholder="https://xxxx.supabase.co" value="${config?.url || ''}">
+      <label><span class="step-num">2</span> Supabase anon Key</label>
+      <input id="sbKey" placeholder="eyJhbGci..." value="${config?.key || ''}">
+      <button class="btn-primary" id="setupSaveBtn">저장하고 다음으로</button>
+      <div class="divider"></div>
+      <button class="btn-secondary" id="setupSkipBtn">⏭ 동기화 없이 사용 (오프라인)</button>
+      ${config?.url ? '<button class="btn-secondary btn-danger" id="setupDisconnectBtn">🔌 동기화 해제</button>' : ''}
+    </div>
+  `;
+  document.getElementById('setupSaveBtn').onclick = () => {
+    const url = document.getElementById('sbUrl').value.trim().replace(/\/$/, '');
+    const key = document.getElementById('sbKey').value.trim();
+    if (!url || !key) {
+      const e = document.getElementById('setupError');
+      e.textContent = 'URL과 Key를 모두 입력해주세요!';
+      e.style.display = 'block';
+      return;
+    }
+    config = config || {};
+    config.url = url;
+    config.key = key;
+    saveConfig();
+    o.classList.remove('show');
+    showRoom();
+  };
+  document.getElementById('setupSkipBtn').onclick = () => o.classList.remove('show');
+  const dc = document.getElementById('setupDisconnectBtn');
+  if (dc) dc.onclick = () => {
+    if (!confirm('동기화를 해제할까요? 체크 데이터는 로컬에 그대로 남아있어요.')) return;
+    config = null;
+    localStorage.removeItem(CONFIG_KEY);
+    stopSync();
+    o.classList.remove('show');
+    updateSyncUI(false);
+  };
+}
+
+function showRoom() {
+  const o = document.getElementById('roomOverlay');
+  o.classList.add('show');
+  o.innerHTML = `
+    <div class="setup-box">
+      <h2>💑 부부 방 만들기/참여</h2>
+      <p>한 명이 방을 만들고,<br>다른 한 명이 같은 코드로 참여하세요!</p>
+      <div id="roomError" class="error-msg"></div>
+      <button class="btn-primary" id="createRoomBtn">🏠 새 방 만들기 (처음이면)</button>
+      <div class="divider"></div>
+      <label>또는 방 코드로 참여</label>
+      <input id="joinCode" placeholder="예: A3B7K2" maxlength="6" style="text-transform:uppercase;text-align:center;font-size:1.1rem;letter-spacing:4px">
+      <button class="btn-primary" id="joinRoomBtn" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">🔗 참여하기</button>
+      <button class="btn-secondary" id="roomBackBtn">← 뒤로</button>
+    </div>
+  `;
+  document.getElementById('createRoomBtn').onclick = async () => {
+    const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const ok = await cloudCreateRoom(code);
+    if (!ok) {
+      const e = document.getElementById('roomError');
+      e.textContent = '방 만들기 실패. URL/Key를 확인해주세요.';
+      e.style.display = 'block';
+      return;
+    }
+    config.room = code;
+    saveConfig();
+    o.innerHTML = `
+      <div class="setup-box">
+        <h2>✅ 방이 만들어졌어요!</h2>
+        <p>아래 코드를 와이프에게 보내주세요!</p>
+        <div class="room-code-display">${code}</div>
+        <button class="copy-btn" onclick="navigator.clipboard?.writeText('${code}');this.textContent='✅ 복사됨!'">📋 코드 복사</button>
+        <button class="btn-primary" style="margin-top:1rem" onclick="document.getElementById('roomOverlay').classList.remove('show');startSync()">🎉 시작하기!</button>
+      </div>
+    `;
+  };
+  document.getElementById('joinRoomBtn').onclick = async () => {
+    const code = document.getElementById('joinCode').value.trim().toUpperCase();
+    if (!code || code.length < 4) {
+      const e = document.getElementById('roomError');
+      e.textContent = '방 코드를 입력해주세요!';
+      e.style.display = 'block';
+      return;
+    }
+    config.room = code;
+    saveConfig();
+    const cloud = await cloudFetch();
+    if (cloud === null) {
+      const e = document.getElementById('roomError');
+      e.textContent = '방을 찾을 수 없어요. 코드를 확인해주세요.';
+      e.style.display = 'block';
+      config.room = null;
+      saveConfig();
+      return;
+    }
+    // Merge cloud into local, preserving UI state
+    const localState = loadState();
+    const merged = { ...cloud };
+    Object.keys(localState).forEach(k => { if (k.startsWith('__')) merged[k] = localState[k]; });
+    saveState(merged);
+    lastSyncedJson = JSON.stringify(cloud);
+    render();
+    o.innerHTML = `
+      <div class="setup-box">
+        <h2>✅ 연결됐어요!</h2>
+        <p>이제 부부 체크리스트가<br>실시간으로 동기화됩니다 💑</p>
+        <div class="room-code-display small">방 코드: ${code}</div>
+        <button class="btn-primary" onclick="document.getElementById('roomOverlay').classList.remove('show');startSync()">🎉 시작하기!</button>
+      </div>
+    `;
+  };
+  document.getElementById('roomBackBtn').onclick = () => {
+    o.classList.remove('show');
+    showSetup();
+  };
 }
 
 // ===== Render =====
@@ -1499,8 +1908,10 @@ function catLabel(c) {
 function toggleCheck(id) {
   const state = loadState();
   state[id] = !state[id];
+  if (!state[id]) delete state[id];
   saveState(state);
   render();
+  if (config?.room) syncToCloud();
 }
 
 function toggleItem(id, event) {
@@ -1527,8 +1938,9 @@ function toggleAll(collapse) {
 
 function resetAll() {
   if (!confirm('정말 모든 체크 상태를 초기화할까요?')) return;
-  localStorage.removeItem('childbirth-checklist-state');
+  localStorage.removeItem(STATE_KEY);
   render();
+  if (config?.room) syncToCloud();
 }
 
 // ===== Share / Import =====
@@ -1577,6 +1989,7 @@ function applyImport() {
     data.checked.forEach(id => state[id] = true);
     saveState(state);
     render();
+    if (config?.room) syncToCloud();
     closeModal();
     alert('적용 완료!');
   } catch (e) {
@@ -1584,8 +1997,14 @@ function applyImport() {
   }
 }
 
-// Initial render
+// ===== Initial load =====
+loadConfig();
 render();
+if (config?.url && config?.key && config?.room) {
+  startSync();
+} else {
+  updateSyncUI(false);
+}
 </script>
 </body>
 </html>
